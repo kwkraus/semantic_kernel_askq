@@ -17,7 +17,6 @@ using System.Threading.Tasks;
 namespace DocumentQuestions.Function
 {
    public class HttpTriggerUploadFile(
-      ILogger<HttpTriggerUploadFile> log, 
       IConfiguration config)
    {
       [Function("HttpTriggerUploadFile")]
