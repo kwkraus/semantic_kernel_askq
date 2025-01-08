@@ -1,12 +1,8 @@
-﻿using Azure;
-using Azure.Identity;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.AzureAISearch;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Memory;
 using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
 using System.Reflection;
@@ -22,11 +18,12 @@ namespace DocumentQuestions.Library
    {
       Kernel kernel;
       ISemanticTextMemory semanticMemory;
-      ILogger<SemanticUtility> log;
-      IConfiguration config;
-      ILoggerFactory logFactory;
-      bool usingVolatileMemory = false;
-      Common common;
+      private readonly ILogger<SemanticUtility> log;
+      private readonly IConfiguration config;
+      private readonly ILoggerFactory logFactory;
+      private readonly bool usingVolatileMemory = false;
+      private readonly Common common;
+
       public SemanticUtility(ILoggerFactory logFactory, IConfiguration config, Common common)
       {
          log = logFactory.CreateLogger<SemanticUtility>();
@@ -35,7 +32,6 @@ namespace DocumentQuestions.Library
          this.common = common;
          InitMemoryAndKernel();
       }
-
 
       public void InitMemoryAndKernel()
       {
@@ -70,6 +66,7 @@ namespace DocumentQuestions.Library
          var assembly = Assembly.GetExecutingAssembly();
          var resources = assembly.GetManifestResourceNames().ToList();
          Dictionary<string, KernelFunction> yamlPrompts = new();
+
          resources.ForEach(r =>
          {
             if (r.ToLower().EndsWith("yaml"))
@@ -82,18 +79,20 @@ namespace DocumentQuestions.Library
                yamlPrompts.Add(key, func);
             }
          });
+
          var plugin = KernelPluginFactory.CreateFromFunctions("YAMLPlugins", yamlPrompts.Select(y => y.Value).ToArray());
          kernel.Plugins.Add(plugin);
 
       }
-      public async Task<string> AskQuestion(string question, string documentContent)
+
+      public async Task<string> AskQuestionAsync(string question, string documentContent)
       {
          log.LogInformation("Asking question about document...");
          var result = await kernel.InvokeAsync("YAMLPlugins", "AskQuestions", new() { { "question", question }, { "content", documentContent } });
          return result.GetValue<string>();
       }
 
-      public async IAsyncEnumerable<string> AskQuestionStreaming(string question, string documentContent)
+      public async IAsyncEnumerable<string> AskQuestionStreamingAsync(string question, string documentContent)
       {
          log.LogDebug("Asking question about document...");
          var result = kernel.InvokeStreamingAsync("YAMLPlugins", "AskQuestions", new() { { "question", question }, { "content", documentContent } });
@@ -102,8 +101,7 @@ namespace DocumentQuestions.Library
             yield return item.ToString();
          }
       }
-
-  
+        
       public async Task StoreMemoryAsync(string collectionName, Dictionary<string, string> docFile)
       {
          collectionName = Common.ReplaceInvalidCharacters(collectionName);
@@ -121,6 +119,7 @@ namespace DocumentQuestions.Library
             log.LogDebug($" #{++i} saved to {collectionName}.");
          }
       }
+      
       public async Task<IAsyncEnumerable<MemoryQueryResult>> SearchMemoryAsync(string collectionName, string query)
       {
          //If using Volatile Memory, first need to re-populate memory from Blob storage
@@ -150,10 +149,11 @@ namespace DocumentQuestions.Library
          return memoryResults;
       }
 
-      public async Task<string> SearchForReleventContent(string collectionName, string query)
+      public async Task<string> SearchForReleventContentAsync(string collectionName, string query)
       {
          StringBuilder sb = new();
          var mems = await SearchMemoryAsync(collectionName, query);
+
          await foreach(var mem in mems)
          {
             sb.AppendLine(mem.Metadata.Description);
@@ -161,7 +161,5 @@ namespace DocumentQuestions.Library
 
          return sb.ToString();
       }
-
-
    }
 }

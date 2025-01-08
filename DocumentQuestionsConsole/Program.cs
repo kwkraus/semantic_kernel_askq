@@ -1,33 +1,30 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Azure;
+using Azure.AI.FormRecognizer.DocumentAnalysis;
+using DocumentQuestions.Library;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
-using DocumentQuestions.Library;
-using Azure.AI.FormRecognizer.DocumentAnalysis;
-using Azure;
-using Azure.Identity;
+using System.Reflection;
 
 namespace DocumentQuestions.Console
 {
    internal class Program
    {
-      //private static ILogger log;
-      //private static ILoggerFactory logFactory;
-
       public static void Main(string[] args)
       {
          CreateHostBuilder(args).Build().Run();
       }
 
-      public static IHostBuilder CreateHostBuilder(string[] args)
+      private static IHostBuilder CreateHostBuilder(string[] args)
       {
          (LogLevel level, bool set) = GetLogLevel(args);
 
          if (set)
          {
-            System.Console.WriteLine($"Log level set to '{level.ToString()}'");
-            args = new string[] { "--help" };
+            System.Console.WriteLine($"Log level set to '{level}'");
+            args = ["--help"];
          }
 
 
@@ -70,7 +67,7 @@ namespace DocumentQuestions.Console
              })
              .ConfigureAppConfiguration((hostContext, appConfiguration) =>
              {
-                appConfiguration.SetBasePath(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+                appConfiguration.SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
                 appConfiguration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
                 appConfiguration.AddJsonFile("local.settings.json", optional: false, reloadOnChange: true);
                 appConfiguration.AddEnvironmentVariables();

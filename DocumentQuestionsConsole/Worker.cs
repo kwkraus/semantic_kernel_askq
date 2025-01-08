@@ -21,7 +21,16 @@ namespace DocumentQuestions.Console
       private static DocumentIntelligence documentIntelligence;
       private static string activeDocument = string.Empty;
       private static AiSearch aiSearch;
-      public Worker(ILogger<Worker> logger, ILoggerFactory loggerFactory, IConfiguration configuration, StartArgs sArgs, SemanticUtility semanticUtil, Common cmn, DocumentIntelligence documentIntel, AiSearch aiSrch)
+
+      public Worker(
+         ILogger<Worker> logger, 
+         ILoggerFactory loggerFactory, 
+         IConfiguration configuration, 
+         StartArgs sArgs, 
+         SemanticUtility semanticUtil, 
+         Common cmn, 
+         DocumentIntelligence documentIntel, 
+         AiSearch aiSrch)
       {
          log = logger;
          logFactory = loggerFactory;
@@ -33,7 +42,57 @@ namespace DocumentQuestions.Console
          aiSearch = aiSrch;
       }
 
-      internal static async Task AskQuestion(string[] question)
+      protected async override Task ExecuteAsync(CancellationToken stoppingToken)
+      {
+         Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+         rootParser = CommandBuilder.BuildCommandLine();
+         string[] args = startArgs.Args;
+         if (args.Length == 0) args = new string[] { "-h" };
+         _ = await rootParser.InvokeAsync(args);
+         bool firstPass = true;
+         int fileCount = 0;
+         StringBuilder sb;
+         while (true)
+         {
+            sb = new StringBuilder();
+            syS.Console.WriteLine();
+            if (firstPass && string.IsNullOrWhiteSpace(activeDocument))
+            {
+               fileCount = await rootParser.InvokeAsync("list");
+            }
+
+            if (fileCount > 0)
+            {
+               if (!string.IsNullOrWhiteSpace(activeDocument))
+               {
+                  log.LogInformation(new() { { "Active Document: ", ConsoleColor.DarkGreen }, { activeDocument, ConsoleColor.Blue } });
+                  //log.LogInformation("use '--doc' flag to change the active document.", ConsoleColor.Yellow);
+               }
+               else
+               {
+                  log.LogInformation("Please use the 'doc' command to set an active document to start asking questions. Use 'list' to show available documents or 'process' to index a new document", ConsoleColor.Yellow);
+                  log.LogInformation("");
+               }
+            }
+            else
+            {
+               log.LogInformation("Please use the 'process' command to process your first document.", ConsoleColor.Yellow);
+               log.LogInformation("");
+            }
+
+           
+            syS.Console.Write("dq> ");
+            var line = syS.Console.ReadLine();
+            if (line == null)
+            {
+               return;
+            }
+            int val = await rootParser.InvokeAsync(line);
+            firstPass = false;
+         }
+      }
+
+      internal static async Task AskQuestionAsync(string[] question)
       {
          if(question == null || question.Length == 0)
          {
@@ -46,14 +105,14 @@ namespace DocumentQuestions.Console
          }
          string quest = string.Join(" ", question);
          syS.Console.WriteLine("----------------------");
-         var docContent = await  semanticUtility.SearchForReleventContent(activeDocument, quest);
+         var docContent = await  semanticUtility.SearchForReleventContentAsync(activeDocument, quest);
          if (string.IsNullOrWhiteSpace(docContent))
          {
             log.LogInformation("No relevant content found in the document for the question. Please verify your document name with the 'list' command or try another question.", ConsoleColor.Yellow);
          }
          else
          {
-            await foreach (var bit in semanticUtility.AskQuestionStreaming(quest, docContent))
+            await foreach (var bit in semanticUtility.AskQuestionStreamingAsync(quest, docContent))
             {
                syS.Console.Write(bit);
             }
@@ -64,7 +123,7 @@ namespace DocumentQuestions.Console
          syS.Console.WriteLine();
       }
 
-      internal static async void AzureOpenAiSettings(string chatModel, string chatDeployment, string embedModel, string embedDeployment)
+      internal static async void AzureOpenAiSettingsAsync(string chatModel, string chatDeployment, string embedModel, string embedDeployment)
       {
          if(string.IsNullOrWhiteSpace(chatModel) && string.IsNullOrWhiteSpace(chatDeployment) && string.IsNullOrWhiteSpace(embedModel) && string.IsNullOrWhiteSpace(embedDeployment))
          {
@@ -118,9 +177,9 @@ namespace DocumentQuestions.Console
 
       }
 
-      internal async static Task<int> ListFiles(object t)
+      internal static async  Task<int> ListFilesAsync(object t)
       {
-         var names = await aiSearch.ListAvailableIndexes();
+         var names = await aiSearch.ListAvailableIndexesAsync();
          if(names.Count > 0)
          {
             log.LogInformation("List of available documents:", ConsoleColor.Yellow);
@@ -132,20 +191,23 @@ namespace DocumentQuestions.Console
          return names.Count;
       }
 
-      internal static async Task ProcessFile(string[] file)
+      internal static async Task ProcessFileAsync(string[] file)
       {
          if(file.Length == 0)
          {
             log.LogInformation("Please enter a file name to process", ConsoleColor.Red);
             return;
          }
+
          string name = string.Join(" ", file);
+
          if(!File.Exists(name))
          {
             log.LogInformation($"The file {name} doesn't exist. Please enter a valid file name", ConsoleColor.Red);
             return;
          }
-         await documentIntelligence.ProcessDocument(new FileInfo(name));
+
+         await documentIntelligence.ProcessDocumentAsync(new FileInfo(name));
       }
 
       internal static void SetActiveDocument(string[] document)
@@ -154,54 +216,5 @@ namespace DocumentQuestions.Console
          activeDocument = docName;
       }
 
-      protected async override Task ExecuteAsync(CancellationToken stoppingToken)
-      {
-         Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
-         rootParser = CommandBuilder.BuildCommandLine();
-         string[] args = startArgs.Args;
-         if (args.Length == 0) args = new string[] { "-h" };
-         int val = await rootParser.InvokeAsync(args);
-         bool firstPass = true;
-         int fileCount = 0;
-         StringBuilder sb;
-         while (true)
-         {
-            sb = new StringBuilder();
-            syS.Console.WriteLine();
-            if (firstPass && string.IsNullOrWhiteSpace(activeDocument))
-            {
-               fileCount = await rootParser.InvokeAsync("list");
-            }
-
-            if (fileCount > 0)
-            {
-               if (!string.IsNullOrWhiteSpace(activeDocument))
-               {
-                  log.LogInformation(new() { { "Active Document: ", ConsoleColor.DarkGreen }, { activeDocument, ConsoleColor.Blue } });
-                  //log.LogInformation("use '--doc' flag to change the active document.", ConsoleColor.Yellow);
-               }
-               else
-               {
-                  log.LogInformation("Please use the 'doc' command to set an active document to start asking questions. Use 'list' to show available documents or 'process' to index a new document", ConsoleColor.Yellow);
-                  log.LogInformation("");
-               }
-            }
-            else
-            {
-               log.LogInformation("Please use the 'process' command to process your first document.", ConsoleColor.Yellow);
-               log.LogInformation("");
-            }
-
-           
-            syS.Console.Write("dq> ");
-            var line = syS.Console.ReadLine();
-            if (line == null)
-            {
-               return;
-            }
-            val = await rootParser.InvokeAsync(line);
-            firstPass = false;
-         }
-      }
    }
 }

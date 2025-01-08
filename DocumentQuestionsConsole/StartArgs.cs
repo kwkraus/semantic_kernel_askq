@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DocumentQuestions.Console
+﻿namespace DocumentQuestions.Console
 {
-   internal class StartArgs
+   internal class StartArgs(string[] args)
    {
-      public string[] Args { get; set; }
-      public StartArgs(string[] args)
-      {
-         Args = args;
-      }
+      public string[] Args { get; set; } = args;
    }
 }

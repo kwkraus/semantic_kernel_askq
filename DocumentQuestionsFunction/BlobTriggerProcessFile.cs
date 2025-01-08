@@ -14,24 +14,18 @@ using DocumentQuestions.Library.Models;
 using Azure.Identity;
 namespace DocumentQuestions.Function
 {
-   public class BlobTriggerProcessFile
+   public class BlobTriggerProcessFile(
+      ILoggerFactory logFactory, 
+      IConfiguration config, 
+      SemanticUtility semanticMemory, 
+      DocumentAnalysisClient documentAnalysisClient)
    {
-      private SemanticUtility semanticMemory;
-      private ILoggerFactory logFactory;
-      private ILogger<BlobTriggerProcessFile> log;
-      private IConfiguration config;
-      private DocumentAnalysisClient documentAnalysisClient;
-      public BlobTriggerProcessFile(ILoggerFactory logFactory, IConfiguration config, SemanticUtility semanticMemory, DocumentAnalysisClient documentAnalysisClient)
-      {
-         this.semanticMemory = semanticMemory;
-         this.logFactory = logFactory;
-         log = logFactory.CreateLogger<BlobTriggerProcessFile>();
-         this.config = config;
-         this.documentAnalysisClient = documentAnalysisClient;
-      }
+      private readonly ILogger<BlobTriggerProcessFile> log = logFactory.CreateLogger<BlobTriggerProcessFile>();
 
       [Function("BlobTriggerProcessFile")]
-      public async Task RunAsync([BlobTrigger("raw/{name}", Connection = "STORAGE_ACCOUNT_BLOB_URL")] Stream myBlob, string name)
+      public async Task RunAsync(
+         [BlobTrigger("raw/{name}", Connection = "STORAGE_ACCOUNT_BLOB_URL")] Stream myBlob, 
+         string name)
       {
          try
          {
@@ -50,7 +44,7 @@ namespace DocumentQuestions.Function
 
             log.LogInformation(imgUrl);
 
-            Uri fileUri = new Uri(imgUrl);
+            Uri fileUri = new(imgUrl);
 
             log.LogInformation("About to get data from document intelligence module.");
             AnalyzeDocumentOperation operation = await documentAnalysisClient.AnalyzeDocumentFromUriAsync(WaitUntil.Completed, "prebuilt-read", fileUri);
@@ -76,7 +70,7 @@ namespace DocumentQuestions.Function
                if (!string.IsNullOrEmpty(content))
                {
                   log.LogInformation("content = " + content);
-                  taskList.Add(WriteAnalysisContentToBlob(name, page.PageNumber, content, log));
+                  taskList.Add(WriteAnalysisContentToBlobAsync(name, page.PageNumber, content, log));
                   docContent.Add(GetFileName(name, page.PageNumber), content);
                }
                content = "";
@@ -98,18 +92,17 @@ namespace DocumentQuestions.Function
                      }
                      else
                      {
-                        taskList.Add(WriteAnalysisContentToBlob(name, counter, content, log));
+                        taskList.Add(WriteAnalysisContentToBlobAsync(name, counter, content, log));
                         docContent.Add(GetFileName(name, counter), content);
                         counter++;
 
                         content = paragraph.Content;
                      }
                   }
-
                }
 
                //Add the last paragraph
-               taskList.Add(WriteAnalysisContentToBlob(name, counter, content, log));
+               taskList.Add(WriteAnalysisContentToBlobAsync(name, counter, content, log));
                docContent.Add(GetFileName(name, counter), content);
             }
             taskList.Add(semanticMemory.StoreMemoryAsync(memoryCollectionName, docContent));
@@ -121,10 +114,8 @@ namespace DocumentQuestions.Function
          {
             log.LogError(ex.Message);
          }
-
-
-
       }
+
       private string GetFileName(string name, int counter)
       {
          string nameWithoutExtension = Path.GetFileNameWithoutExtension(name);
@@ -133,7 +124,7 @@ namespace DocumentQuestions.Function
          return newName;
       }
 
-      private async Task<bool> WriteAnalysisContentToBlob(string name, int counter, string content, ILogger log)
+      private async Task<bool> WriteAnalysisContentToBlobAsync(string name, int counter, string content, ILogger log)
       {
          try
          {
@@ -146,6 +137,7 @@ namespace DocumentQuestions.Function
                BlobName = blobName,
                Content = content
             };
+
             string jsonStr = JsonConvert.SerializeObject(jsonObj);
 
             // Save the JSON string to Azure Blob Storage  
@@ -164,12 +156,10 @@ namespace DocumentQuestions.Function
                stream.Write(jsonBytes, 0, jsonBytes.Length);
                stream.Seek(0, SeekOrigin.Begin);
                await blobClient.UploadAsync(stream, overwrite: true);
-
             }
 
             log.LogInformation($"JSON file {newName} saved to Azure Blob Storage.");
             return true;
-
          }
          catch (Exception exe)
          {
@@ -177,6 +167,5 @@ namespace DocumentQuestions.Function
             return false;
          }
       }
-
    }
 }

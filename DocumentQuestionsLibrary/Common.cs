@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using Azure.Identity;
+﻿using Azure.Identity;
 using Azure.Storage.Blobs;
 using DocumentQuestions.Library.Models;
 using Microsoft.Extensions.Configuration;
@@ -9,29 +8,11 @@ using System.Text.RegularExpressions;
 
 namespace DocumentQuestions.Library
 {
-   public class Common
+   public class Common(ILogger<Common> log, IConfiguration config)
    {
-      ILogger<Common> log;
-      IConfiguration config;
-      public Common(ILogger<Common> log, IConfiguration config)
-      {
-         this.log = log;
-         this.config = config;
-      }
+      private readonly ILogger<Common> log = log;
+      private readonly IConfiguration config = config;
 
-      private static TokenCredential _tokenCred = null;
-      public static TokenCredential EntraTokenCredential
-      {
-         get
-         {
-            if(_tokenCred == null)
-            {
-               _tokenCred = new ChainedTokenCredential(new ManagedIdentityCredential(), new AzureCliCredential());
-            }
-            return _tokenCred;
-
-         }
-      }
       public static string ReplaceInvalidCharacters(string input)
       {
          input = Path.GetFileNameWithoutExtension(input).ToLower();

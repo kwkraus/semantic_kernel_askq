@@ -1,6 +1,5 @@
 ﻿using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
-using Azure.Identity;
 using DocumentQuestions.Library;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +19,7 @@ namespace DocumentQuestions.Function
              $"{Environment.GetEnvironmentVariable("HOME")}\\site\\wwwroot";
 
          var builder = new HostBuilder();
+
          builder.ConfigureLogging((hostContext, logging) =>
          {
             logging.SetMinimumLevel(LogLevel.Debug);
@@ -27,6 +27,7 @@ namespace DocumentQuestions.Function
             logging.AddFilter("Microsoft", LogLevel.Warning);
 
          });
+
          builder.ConfigureFunctionsWorkerDefaults();
          builder.ConfigureAppConfiguration(b =>
          {
@@ -38,10 +39,8 @@ namespace DocumentQuestions.Function
               .Build();
 
          });
-         // builder.AddAzureStorage();
 
          builder.ConfigureServices(ConfigureServices);
-
 
          await builder.Build().RunAsync();
       }
@@ -58,6 +57,7 @@ namespace DocumentQuestions.Function
             var key = config.GetValue<string>(Constants.DOCUMENTINTELLIGENCE_KEY) ?? throw new ArgumentException($"Missing {Constants.DOCUMENTINTELLIGENCE_KEY} in configuration");
             return new DocumentAnalysisClient(endpoint, new AzureKeyCredential(key));
          });
+
          services.AddHttpClient();
 
       }

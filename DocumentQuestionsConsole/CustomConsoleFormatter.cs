@@ -1,8 +1,8 @@
-﻿
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
 using syS = System;
+
 namespace DocumentQuestions.Console
 {
 
@@ -36,6 +36,7 @@ namespace DocumentQuestions.Console
          syS.Console.WriteLine();
 
       }
+
       private (syS.ConsoleColor, string) LogLevelShort(LogLevel level)
       {
          switch (level)
@@ -57,6 +58,7 @@ namespace DocumentQuestions.Console
 
          }
       }
+
       public (syS.ConsoleColor color, string message) GetLogEntryColor(string message)
       {
          var color = syS.ConsoleColor.White;
@@ -133,6 +135,7 @@ namespace DocumentQuestions.Console
       {
          logger.LogTrace(FormatMessages(messages));
       }
+
       private static string FormatMessages(Dictionary<string, syS.ConsoleColor> messages)
       {
          var formattedMessages = string.Empty;
@@ -142,10 +145,10 @@ namespace DocumentQuestions.Console
          }
          return formattedMessages;
       }
+
       private static string FormatMessage(string message, syS.ConsoleColor color)
       {
          return message + " **COLOR:" + color.ToString();
       }
-
    }
 }

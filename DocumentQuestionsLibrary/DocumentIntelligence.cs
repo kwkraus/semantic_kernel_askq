@@ -1,43 +1,27 @@
-﻿using Azure;
-using Azure.AI.FormRecognizer.DocumentAnalysis;
-using Microsoft.Extensions.Configuration;
+﻿using Azure.AI.FormRecognizer.DocumentAnalysis;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Text.RegularExpressions;
 
 namespace DocumentQuestions.Library
 {
 
-   public class DocumentIntelligence
+   public class DocumentIntelligence(ILogger<DocumentIntelligence> log, SemanticUtility semanticUtility, DocumentAnalysisClient documentAnalysisClient)
    {
-      private DocumentAnalysisClient documentAnalysisClient;
-      //private ILoggerFactory logFactory;
-      private ILogger<DocumentIntelligence> log;
-      private IConfiguration config;
-      private SemanticUtility semanticUtility;
+      private readonly DocumentAnalysisClient documentAnalysisClient = documentAnalysisClient;
+      private readonly ILogger<DocumentIntelligence> log = log;
+      private readonly SemanticUtility semanticUtility = semanticUtility;
 
-      public DocumentIntelligence(ILogger<DocumentIntelligence> log, IConfiguration config, SemanticUtility semanticUtility, DocumentAnalysisClient documentAnalysisClient)
-      {
-         this.log = log;
-         this.config = config;
-         this.documentAnalysisClient = documentAnalysisClient;
-         this.semanticUtility = semanticUtility;
-      }
-
-      public async Task ProcessDocument(FileInfo file)
+      public async Task ProcessDocumentAsync(FileInfo file)
       {
          log.LogInformation($"Processing file {file.FullName} with Document Intelligence Service...");
          AnalyzeDocumentOperation operation;
-         using (FileStream stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read))
+
+         using (FileStream stream = new(file.FullName, FileMode.Open, FileAccess.Read))
          {
             operation = await documentAnalysisClient.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, "prebuilt-read", stream);
          }
+
          AnalyzeResult result = operation.Value;
+
          if (result != null)
          {
             log.LogInformation($"Parsing Document Intelligence results...");
@@ -49,6 +33,7 @@ namespace DocumentQuestions.Library
             taskList.Add(semanticUtility.StoreMemoryAsync("general", contents));
             Task.WaitAll(taskList.ToArray());
          }
+
          log.LogInformation("Document Processed and Indexed");
 
       }
@@ -57,11 +42,11 @@ namespace DocumentQuestions.Library
       {
          var content = "";
          bool contentFound = false;
-         var taskList = new List<Task>();
          var docContent = new Dictionary<string, string>();
 
          //Split by page if there is content...
          log.LogInformation("Checking document data...");
+
          foreach (DocumentPage page in result.Pages)
          {
 
@@ -79,11 +64,13 @@ namespace DocumentQuestions.Library
                //taskList.Add(WriteAnalysisContentToBlob(name, page.PageNumber, content, log));
                docContent.Add(GetFileName(fileName, page.PageNumber), content);
             }
+
             content = "";
          }
 
          //Otherwise, split by collected paragraphs
          content = "";
+
          if (!contentFound && result.Paragraphs != null)
          {
             var counter = 0;
@@ -98,18 +85,15 @@ namespace DocumentQuestions.Library
                   }
                   else
                   {
-                     //taskList.Add(WriteAnalysisContentToBlob(name, counter, content, log));
                      docContent.Add(GetFileName(fileName, counter), content);
                      counter++;
 
                      content = paragraph.Content + Environment.NewLine;
                   }
                }
-
             }
 
             //Add the last paragraph
-            //taskList.Add(WriteAnalysisContentToBlob(name, counter, content, log));
             docContent.Add(GetFileName(fileName, counter), content);
          }
 

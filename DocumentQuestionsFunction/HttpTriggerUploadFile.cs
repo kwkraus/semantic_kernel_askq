@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,15 +16,10 @@ using System.Threading.Tasks;
 
 namespace DocumentQuestions.Function
 {
-   public class HttpTriggerUploadFile
+   public class HttpTriggerUploadFile(
+      ILogger<HttpTriggerUploadFile> log, 
+      IConfiguration config)
    {
-      ILogger<HttpTriggerUploadFile> log;
-      IConfiguration config;
-      public HttpTriggerUploadFile(ILogger<HttpTriggerUploadFile> log, IConfiguration config)
-      {
-         this.log = log;
-         this.config = config;
-      }
       [Function("HttpTriggerUploadFile")]
       public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequestData req)
       {

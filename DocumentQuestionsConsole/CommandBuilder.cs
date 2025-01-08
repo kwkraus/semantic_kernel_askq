@@ -24,21 +24,21 @@ namespace DocumentQuestions.Console
          var questionArg = new Argument<string[]>("question", "Question to ask about the document") { Arity = ArgumentArity.ZeroOrMore };
          var askQuestionCommand = new Command("ask", "Ask a question on the document(s)");
          askQuestionCommand.Add(questionArg);
-         askQuestionCommand.Handler = CommandHandler.Create<string[]>(Worker.AskQuestion);
+         askQuestionCommand.Handler = CommandHandler.Create<string[]>(Worker.AskQuestionAsync);
 
          var fileArg = new Argument<string[]>("file", "Path to the file to process and index") { Arity = ArgumentArity.ZeroOrMore };
          var uploadCommand = new Command("process", "Process the file contents against Document Intelligence and add to Azure AI Search index");
          uploadCommand.Add(fileArg);
-         uploadCommand.Handler = CommandHandler.Create<string[]>(Worker.ProcessFile);
+         uploadCommand.Handler = CommandHandler.Create<string[]>(Worker.ProcessFileAsync);
 
 
          var listCommand = new Command("list", "List the available files to ask questions about");
-         listCommand.Handler = CommandHandler.Create(Worker.ListFiles);
+         listCommand.Handler = CommandHandler.Create(Worker.ListFilesAsync);
 
 
          RootCommand rootCommand = new RootCommand(description: $"Utility to ask questions on documents that have been indexed in Azure AI Search");
          rootCommand.Add(questionArg);
-         rootCommand.Handler = CommandHandler.Create<string[]>(Worker.AskQuestion);
+         rootCommand.Handler = CommandHandler.Create<string[]>(Worker.AskQuestionAsync);
          rootCommand.Add(docCommand);
          rootCommand.Add(askQuestionCommand);
          rootCommand.Add(uploadCommand);
@@ -82,7 +82,7 @@ namespace DocumentQuestions.Console
             embedModelOpt,
             embedDepoymentOpt
          };
-         aiSetCmd.Handler = CommandHandler.Create<string, string, string, string>(Worker.AzureOpenAiSettings);
+         aiSetCmd.Handler = CommandHandler.Create<string, string, string, string>(Worker.AzureOpenAiSettingsAsync);
 
          var aiCmd = new Command("ai", "Change or List Azure OpenAI model and deployment runtime settings");
          aiCmd.Add(aiSetCmd);

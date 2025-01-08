@@ -1,22 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Azure;
-using Azure.Core;
-using Azure.Identity;
-using Azure.Search.Documents;
+﻿using Azure;
 using Azure.Search.Documents.Indexes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+
 namespace DocumentQuestions.Library
 {
    public class AiSearch
    {
-      SearchIndexClient client;
-      ILogger<AiSearch> log;
-      IConfiguration config;
+      private SearchIndexClient client;
+      private ILogger<AiSearch> log;
+      private IConfiguration config;
+
       public AiSearch(ILogger<AiSearch> log, IConfiguration config)
       {
          this.log = log;
@@ -27,20 +21,22 @@ namespace DocumentQuestions.Library
          //client = new SearchIndexClient(new Uri(endpoint), new DefaultAzureCredential());
          client = new SearchIndexClient(new Uri(endpoint), new AzureKeyCredential(key));
       }
-      public async Task<List<string>> ListAvailableIndexes()
+
+      public async Task<List<string>> ListAvailableIndexesAsync()
       {
          try
          {
-            List<string> names = new();
+            List<string> names = [];
             await foreach (var page in client.GetIndexNamesAsync())
             {
                names.Add($"\"{page}\"");
             }
             return names;
-         }catch(Exception exe)
+         }
+         catch(Exception exe)
          {
             log.LogError($"Problem retrieving AI Search Idexes:\r\n{exe.Message}");
-            return new List<string>();
+            return [];
          }
       }
    }
