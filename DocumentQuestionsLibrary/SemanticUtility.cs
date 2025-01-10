@@ -10,25 +10,24 @@ using System.Text;
 
 namespace DocumentQuestions.Library
 {
-#pragma warning disable SKEXP0052 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-#pragma warning disable SKEXP0021 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-#pragma warning disable SKEXP0011 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+#pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
    public class SemanticUtility
    {
-      Kernel kernel;
-      ISemanticTextMemory semanticMemory;
+      private Kernel? kernel;
+      private ISemanticTextMemory? semanticMemory;
       private readonly ILogger<SemanticUtility> log;
       private readonly IConfiguration config;
-      private readonly ILoggerFactory logFactory;
       private readonly bool usingVolatileMemory = false;
       private readonly Common common;
 
-      public SemanticUtility(ILoggerFactory logFactory, IConfiguration config, Common common)
+      public SemanticUtility(
+         ILoggerFactory logFactory, 
+         IConfiguration config, 
+         Common common)
       {
          log = logFactory.CreateLogger<SemanticUtility>();
          this.config = config;
-         this.logFactory = logFactory;
          this.common = common;
          InitMemoryAndKernel();
       }
@@ -46,32 +45,29 @@ namespace DocumentQuestions.Library
          var aiSearchKey = config[Constants.AISEARCH_KEY] ?? throw new ArgumentException($"Missing {Constants.AISEARCH_KEY} in configuration.");
 
          //Build and configure Memory Store
-         //IMemoryStore store = new AzureAISearchMemoryStore(aiSearchEndpoint, new DefaultAzureCredential());
          IMemoryStore store = new AzureAISearchMemoryStore(aiSearchEndpoint, aiSearchKey);
 
          var memBuilder = new MemoryBuilder()
              .WithMemoryStore(store)
              .WithTextEmbeddingGeneration(new AzureOpenAITextEmbeddingGenerationService(deploymentName: embeddingDeploymentName, modelId: embeddingModel, endpoint: openAIEndpoint, apiKey: apiKey));
-             //.WithLoggerFactory(logFactory);
 
          semanticMemory = memBuilder.Build();
 
          //Build and configure the kernel
          var kernelBuilder = Kernel.CreateBuilder();
          kernelBuilder.AddAzureOpenAIChatCompletion(deploymentName: openAiChatDeploymentNAme, modelId: openAiChatModelName, endpoint: openAIEndpoint, apiKey: apiKey);
-         //kernelBuilder.Services.AddSingleton(logFactory);
 
          kernel = kernelBuilder.Build();
 
          var assembly = Assembly.GetExecutingAssembly();
          var resources = assembly.GetManifestResourceNames().ToList();
-         Dictionary<string, KernelFunction> yamlPrompts = new();
+         Dictionary<string, KernelFunction> yamlPrompts = [];
 
          resources.ForEach(r =>
          {
             if (r.ToLower().EndsWith("yaml"))
             {
-               var count = r.Split('.').Count();
+               var count = r.Split('.').Length;
                var key = count > 3 ? $"{r.Split('.')[count - 3]}_{r.Split('.')[count - 2]}" : r.Split('.')[count - 2];
                using StreamReader reader = new(Assembly.GetExecutingAssembly().GetManifestResourceStream(r)!);
                var content = reader.ReadToEnd();
@@ -82,7 +78,6 @@ namespace DocumentQuestions.Library
 
          var plugin = KernelPluginFactory.CreateFromFunctions("YAMLPlugins", yamlPrompts.Select(y => y.Value).ToArray());
          kernel.Plugins.Add(plugin);
-
       }
 
       public async Task<string> AskQuestionAsync(string question, string documentContent)
@@ -107,6 +102,7 @@ namespace DocumentQuestions.Library
          collectionName = Common.ReplaceInvalidCharacters(collectionName);
          log.LogInformation($"Storing memory to AI Search collection '{collectionName}'...");
          var i = 0;
+
          foreach (var entry in docFile)
          {
             await semanticMemory.SaveReferenceAsync(

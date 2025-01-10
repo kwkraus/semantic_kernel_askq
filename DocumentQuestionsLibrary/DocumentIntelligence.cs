@@ -3,13 +3,11 @@ using Microsoft.Extensions.Logging;
 
 namespace DocumentQuestions.Library
 {
-
-   public class DocumentIntelligence(ILogger<DocumentIntelligence> log, SemanticUtility semanticUtility, DocumentAnalysisClient documentAnalysisClient)
+   public class DocumentIntelligence(
+      ILogger<DocumentIntelligence> log, 
+      SemanticUtility semanticUtility, 
+      DocumentAnalysisClient documentAnalysisClient)
    {
-      private readonly DocumentAnalysisClient documentAnalysisClient = documentAnalysisClient;
-      private readonly ILogger<DocumentIntelligence> log = log;
-      private readonly SemanticUtility semanticUtility = semanticUtility;
-
       public async Task ProcessDocumentAsync(FileInfo file)
       {
          log.LogInformation($"Processing file {file.FullName} with Document Intelligence Service...");
@@ -26,16 +24,18 @@ namespace DocumentQuestions.Library
          {
             log.LogInformation($"Parsing Document Intelligence results...");
             var contents = SplitDocumentIntoPagesAndParagraphs(result, file.Name);
-            var taskList = new List<Task>();
-            string memoryCollectionName = Common.ReplaceInvalidCharacters(Path.GetFileNameWithoutExtension(file.Name).ToLower());
+
             log.LogInformation($"Saving Document Intelligence results to Azure AI Search Index...");
-            taskList.Add(semanticUtility.StoreMemoryAsync(memoryCollectionName, contents));
-            taskList.Add(semanticUtility.StoreMemoryAsync("general", contents));
-            Task.WaitAll(taskList.ToArray());
+            string memoryCollectionName = Common.ReplaceInvalidCharacters(Path.GetFileNameWithoutExtension(file.Name).ToLower());
+            var taskList = new List<Task>
+            {
+               semanticUtility.StoreMemoryAsync(memoryCollectionName, contents),
+               semanticUtility.StoreMemoryAsync("general", contents)
+            };
+            Task.WaitAll([.. taskList]);
          }
 
          log.LogInformation("Document Processed and Indexed");
-
       }
    
       private Dictionary<string, string> SplitDocumentIntoPagesAndParagraphs(AnalyzeResult result, string fileName)
@@ -49,7 +49,6 @@ namespace DocumentQuestions.Library
 
          foreach (DocumentPage page in result.Pages)
          {
-
             for (int i = 0; i < page.Lines.Count; i++)
             {
                DocumentLine line = page.Lines[i];
@@ -60,8 +59,7 @@ namespace DocumentQuestions.Library
 
             if (!string.IsNullOrEmpty(content))
             {
-               log.LogDebug("content = " + content);
-               //taskList.Add(WriteAnalysisContentToBlob(name, page.PageNumber, content, log));
+               log.LogDebug($"content = {content}");
                docContent.Add(GetFileName(fileName, page.PageNumber), content);
             }
 
@@ -76,7 +74,6 @@ namespace DocumentQuestions.Library
             var counter = 0;
             foreach (DocumentParagraph paragraph in result.Paragraphs)
             {
-
                if (paragraph != null && !string.IsNullOrWhiteSpace(paragraph.Content))
                {
                   if (content.Length + paragraph.Content.Length < 4000)

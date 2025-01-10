@@ -93,12 +93,14 @@ $appSettings = @{
         "UseOpenAIKey" = $true
 }
 
- Write-Host -ForegroundColor Green "Creating console app  local.settings.json"
- Push-Location -Path .\DocumentQuestionsConsole\
- $localsettingsJson = ConvertTo-Json $appSettings -Depth 100
- $localsettingsJson | Out-File -FilePath "local.settings.json"
- Pop-Location
- if(!$?){ exit }
+Write-Host -ForegroundColor Green "Creating console app  local.settings.json"
+Push-Location -Path .\DocumentQuestionsConsole\
+$localsettingsJson = ConvertTo-Json $appSettings -Depth 100
+Set-Content -Path"'local.settings.json" -Value $localsettingsJson
+#$localsettingsJson | Out-File -FilePath "local.settings.json"
+Pop-Location
+
+if(!$?){ exit }
 
 Push-Location -Path .\DocumentQuestionsFunction\
 Write-Host "Creating function app local.settings.json" -ForegroundColor Green
@@ -138,7 +140,7 @@ $funcSettings = @{
 
 Push-Location -Path .\DocumentQuestionsConsole\
 Write-Host "Building Connsole App" -ForegroundColor Green
-dotnet build . -c debug -warnaserror none
+dotnet build . -c debug
 dotnet run --no-build -- -h
 Pop-Location
 

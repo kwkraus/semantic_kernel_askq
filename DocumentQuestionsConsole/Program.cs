@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
-using System.Reflection;
 
 namespace DocumentQuestions.Console
 {
@@ -26,7 +25,6 @@ namespace DocumentQuestions.Console
             System.Console.WriteLine($"Log level set to '{level}'");
             args = ["--help"];
          }
-
 
          var builder = new HostBuilder()
              .ConfigureLogging(logging =>
@@ -50,9 +48,10 @@ namespace DocumentQuestions.Console
                    return new DocumentAnalysisClient(endpoint, new AzureKeyCredential(key));
                 });
                 services.AddSingleton<Common>();
+                services.AddSingleton<ConsoleFormatter, CustomConsoleFormatter>();
+
                 services.AddHostedService<Worker>();
 
-                services.AddSingleton<ConsoleFormatter, CustomConsoleFormatter>();
                 services.AddLogging(builder =>
                 {
                    builder.AddConsoleFormatter<CustomConsoleFormatter, ConsoleFormatterOptions>();
@@ -67,7 +66,8 @@ namespace DocumentQuestions.Console
              })
              .ConfigureAppConfiguration((hostContext, appConfiguration) =>
              {
-                appConfiguration.SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+                var env = hostContext.HostingEnvironment;
+                appConfiguration.SetBasePath(env.ContentRootPath);
                 appConfiguration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
                 appConfiguration.AddJsonFile("local.settings.json", optional: false, reloadOnChange: true);
                 appConfiguration.AddEnvironmentVariables();

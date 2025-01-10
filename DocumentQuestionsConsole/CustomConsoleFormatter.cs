@@ -12,13 +12,15 @@ namespace DocumentQuestions.Console
       {
       }
 
-      public override void Write<TState>(in LogEntry<TState> logEntry, IExternalScopeProvider scopeProvider, TextWriter textWriter)
+      public override void Write<TState>(in LogEntry<TState> logEntry, IExternalScopeProvider? scopeProvider, TextWriter textWriter)
       {
          (var color, var level) = LogLevelShort(logEntry.LogLevel);
 
-         var messages = logEntry.State.ToString().Split("|", StringSplitOptions.RemoveEmptyEntries);
-         string parsedMessage = "";
+         var messages = logEntry.State?.ToString()?.Split("|", StringSplitOptions.RemoveEmptyEntries);
 
+         //no messages were found, no need to write to console
+         if (messages is null) return;
+         
          if (logEntry.LogLevel != LogLevel.Information)
          {
             syS.Console.Write("[");
@@ -27,17 +29,19 @@ namespace DocumentQuestions.Console
             syS.Console.ResetColor();
             syS.Console.Write("] ");
          }
+
          foreach (var msg in messages)
          {
+            string parsedMessage;
             (syS.Console.ForegroundColor, parsedMessage) = GetLogEntryColor(msg);
             syS.Console.Write($"{parsedMessage} ");
             syS.Console.ResetColor();
          }
-         syS.Console.WriteLine();
 
+         syS.Console.WriteLine();
       }
 
-      private (syS.ConsoleColor, string) LogLevelShort(LogLevel level)
+      private static (syS.ConsoleColor, string) LogLevelShort(LogLevel level)
       {
          switch (level)
          {
@@ -59,21 +63,24 @@ namespace DocumentQuestions.Console
          }
       }
 
-      public (syS.ConsoleColor color, string message) GetLogEntryColor(string message)
+      public static (syS.ConsoleColor color, string message) GetLogEntryColor(string message)
       {
          var color = syS.ConsoleColor.White;
+
          if (message.Contains("**COLOR:"))
          {
             var colorString = message.Split("**COLOR:")[1];
+
             if (Enum.TryParse(colorString, out color))
             {
                return (color, message.Split("**COLOR:")[0]);
             }
          }
+
          return (color, message);
       }
-
    }
+
    public static class ILoggerExtensions
    {
       public static void LogInformation(this ILogger logger, string message, syS.ConsoleColor color)
