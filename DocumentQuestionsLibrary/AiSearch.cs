@@ -1,27 +1,12 @@
-﻿using Azure;
-using Azure.Search.Documents.Indexes;
-using Microsoft.Extensions.Configuration;
+﻿using Azure.Search.Documents.Indexes;
 using Microsoft.Extensions.Logging;
 
 namespace DocumentQuestions.Library
 {
-   public class AiSearch
+   public class AiSearch(
+      ILogger<AiSearch> log,
+      SearchIndexClient client)
    {
-      private SearchIndexClient client;
-      private ILogger<AiSearch> log;
-      private IConfiguration config;
-
-      public AiSearch(ILogger<AiSearch> log, IConfiguration config)
-      {
-         this.log = log;
-         this.config = config;
-         string endpoint = config[Constants.AISEARCH_ENDPOINT] ?? throw new ArgumentException($"Missing {Constants.AISEARCH_ENDPOINT} in configuration");
-         string key = config[Constants.AISEARCH_KEY] ?? throw new ArgumentException($"Missing {Constants.AISEARCH_KEY} in configuration");
-         // Create a client
-         //client = new SearchIndexClient(new Uri(endpoint), new DefaultAzureCredential());
-         client = new SearchIndexClient(new Uri(endpoint), new AzureKeyCredential(key));
-      }
-
       public async Task<List<string>> ListAvailableIndexesAsync()
       {
          try

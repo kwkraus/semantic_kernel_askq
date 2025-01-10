@@ -1,6 +1,8 @@
 ﻿using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
+using Azure.Search.Documents.Indexes;
 using DocumentQuestions.Library;
+using DocumentQuestions.Library.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -36,9 +38,8 @@ namespace DocumentQuestions.Console
              .ConfigureServices((hostContext, services) =>
              {
                 services.AddSingleton<StartArgs>(new StartArgs(args));
-                services.AddSingleton<SemanticUtility>();
-                services.AddSingleton<DocumentIntelligence>();
-                services.AddSingleton<AiSearch>();
+                services.AddSingleton<SemanticUtilityService>();
+                services.AddSingleton<DocumentIntelligenceService>();
                 services.AddSingleton(sp =>
                 {
                    var config = sp.GetRequiredService<IConfiguration>();
@@ -47,6 +48,15 @@ namespace DocumentQuestions.Console
                    var key = config.GetValue<string>(Constants.DOCUMENTINTELLIGENCE_KEY) ?? throw new ArgumentException($"Missing {Constants.DOCUMENTINTELLIGENCE_KEY} in configuration");
                    return new DocumentAnalysisClient(endpoint, new AzureKeyCredential(key));
                 });
+                services.AddSingleton(sp =>
+                {
+                   var config = sp.GetRequiredService<IConfiguration>();
+
+                   string endpoint = config[Constants.AISEARCH_ENDPOINT] ?? throw new ArgumentException($"Missing {Constants.AISEARCH_ENDPOINT} in configuration");
+                   string key = config[Constants.AISEARCH_KEY] ?? throw new ArgumentException($"Missing {Constants.AISEARCH_KEY} in configuration");
+                   return new SearchIndexClient(new Uri(endpoint), new AzureKeyCredential(key));
+                });
+                services.AddSingleton<AiSearch>();
                 services.AddSingleton<Common>();
                 services.AddSingleton<ConsoleFormatter, CustomConsoleFormatter>();
 

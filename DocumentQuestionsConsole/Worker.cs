@@ -1,35 +1,34 @@
 ﻿using DocumentQuestions.Library;
+using DocumentQuestions.Library.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.CommandLine.Parsing;
 using System.Reflection;
-using System.Text;
 using syS = System;
 
 namespace DocumentQuestions.Console
 {
    internal class Worker : BackgroundService
    {
-      private static ILogger<Worker> log;
+      private static ILogger<Worker> logger;
       private static IConfiguration config;
-      private static StartArgs? startArgs;
-      private static SemanticUtility semanticUtility;
+      private static StartArgs startArgs;
+      private static SemanticUtilityService semanticUtility;
       private static Parser rootParser;
-      private static DocumentIntelligence documentIntelligence;
+      private static DocumentIntelligenceService documentIntelligence;
       private static string activeDocument = string.Empty;
       private static AiSearch aiSearch;
 
       public Worker(
          ILogger<Worker> logger,
-         ILoggerFactory loggerFactory,
          IConfiguration configuration,
          StartArgs sArgs,
-         SemanticUtility semanticUtil,
-         DocumentIntelligence documentIntel,
+         SemanticUtilityService semanticUtil,
+         DocumentIntelligenceService documentIntel,
          AiSearch aiSrch)
       {
-         log = logger;
+         Worker.logger = logger;
          config = configuration;
          startArgs = sArgs;
          semanticUtility = semanticUtil;
@@ -59,18 +58,18 @@ namespace DocumentQuestions.Console
             {
                if (!string.IsNullOrWhiteSpace(activeDocument))
                {
-                  log.LogInformation(new() { { "Active Document: ", ConsoleColor.DarkGreen }, { activeDocument, ConsoleColor.Blue } });
+                  logger.LogInformation(new() { { "Active Document: ", ConsoleColor.DarkGreen }, { activeDocument, ConsoleColor.Blue } });
                }
                else
                {
-                  log.LogInformation("Please use the 'doc' command to set an active document to start asking questions. Use 'list' to show available documents or 'process' to index a new document", ConsoleColor.Yellow);
-                  log.LogInformation("");
+                  logger.LogInformation("Please use the 'doc' command to set an active document to start asking questions. Use 'list' to show available documents or 'process' to index a new document", ConsoleColor.Yellow);
+                  logger.LogInformation("");
                }
             }
             else
             {
-               log.LogInformation("Please use the 'process' command to process your first document.", ConsoleColor.Yellow);
-               log.LogInformation("");
+               logger.LogInformation("Please use the 'process' command to process your first document.", ConsoleColor.Yellow);
+               logger.LogInformation("");
             }
 
             //prompt for command input and invoke the parser
@@ -104,7 +103,7 @@ namespace DocumentQuestions.Console
 
          if (string.IsNullOrWhiteSpace(docContent))
          {
-            log.LogInformation("No relevant content found in the document for the question. Please verify your document name with the 'list' command or try another question.", ConsoleColor.Yellow);
+            logger.LogInformation("No relevant content found in the document for the question. Please verify your document name with the 'list' command or try another question.", ConsoleColor.Yellow);
          }
          else
          {
@@ -135,28 +134,28 @@ namespace DocumentQuestions.Console
          if (!string.IsNullOrWhiteSpace(chatModel))
          {
             config[Constants.OPENAI_CHAT_MODEL_NAME] = chatModel;
-            log.LogInformation(new() { { "Set chat model to", ConsoleColor.DarkYellow }, { chatModel, ConsoleColor.Yellow } });
+            logger.LogInformation(new() { { "Set chat model to", ConsoleColor.DarkYellow }, { chatModel, ConsoleColor.Yellow } });
             changed = true;
          }
 
          if (!string.IsNullOrWhiteSpace(chatDeployment))
          {
             config[Constants.OPENAI_CHAT_DEPLOYMENT_NAME] = chatDeployment;
-            log.LogInformation(new() { { "Set chat deployment to", ConsoleColor.DarkYellow }, { chatDeployment, ConsoleColor.Yellow } });
+            logger.LogInformation(new() { { "Set chat deployment to", ConsoleColor.DarkYellow }, { chatDeployment, ConsoleColor.Yellow } });
             changed = true;
          }
 
          if (!string.IsNullOrWhiteSpace(embedModel))
          {
             config[Constants.OPENAI_EMBEDDING_MODEL_NAME] = embedModel;
-            log.LogInformation(new() { { "Set embedding model to", ConsoleColor.DarkYellow }, { embedModel, ConsoleColor.Yellow } });
+            logger.LogInformation(new() { { "Set embedding model to", ConsoleColor.DarkYellow }, { embedModel, ConsoleColor.Yellow } });
             changed = true;
          }
 
          if (!string.IsNullOrWhiteSpace(embedDeployment))
          {
             config[Constants.OPENAI_EMBEDDING_DEPLOYMENT_NAME] = embedDeployment;
-            log.LogInformation(new() { { "Set embedding deployment to", ConsoleColor.DarkYellow }, { embedDeployment, ConsoleColor.Yellow } });
+            logger.LogInformation(new() { { "Set embedding deployment to", ConsoleColor.DarkYellow }, { embedDeployment, ConsoleColor.Yellow } });
             changed = true;
          }
 
@@ -170,13 +169,13 @@ namespace DocumentQuestions.Console
       internal static void ListAiSettings()
       {
          int pad = 21;
-         log.LogInformation("-------------------------------------");
-         log.LogInformation("Azure OpenAI settings", ConsoleColor.Gray);
-         log.LogInformation(new() { { "Chat Model:".PadRight(pad, ' '), ConsoleColor.DarkBlue }, { config[Constants.OPENAI_CHAT_MODEL_NAME], ConsoleColor.Blue } });
-         log.LogInformation(new() { { "Chat Deployment:".PadRight(pad, ' '), ConsoleColor.DarkBlue }, { config[Constants.OPENAI_CHAT_DEPLOYMENT_NAME], ConsoleColor.Blue } });
-         log.LogInformation(new() { { "Embedding Model:".PadRight(pad, ' '), ConsoleColor.DarkBlue }, { config[Constants.OPENAI_EMBEDDING_MODEL_NAME], ConsoleColor.Blue } });
-         log.LogInformation(new() { { "Embedding Deployment:".PadRight(pad, ' '), ConsoleColor.DarkBlue }, { config[Constants.OPENAI_EMBEDDING_DEPLOYMENT_NAME], ConsoleColor.Blue } });
-         log.LogInformation("-------------------------------------");
+         logger.LogInformation("-------------------------------------");
+         logger.LogInformation("Azure OpenAI settings", ConsoleColor.Gray);
+         logger.LogInformation(new() { { "Chat Model:".PadRight(pad, ' '), ConsoleColor.DarkBlue }, { config[Constants.OPENAI_CHAT_MODEL_NAME], ConsoleColor.Blue } });
+         logger.LogInformation(new() { { "Chat Deployment:".PadRight(pad, ' '), ConsoleColor.DarkBlue }, { config[Constants.OPENAI_CHAT_DEPLOYMENT_NAME], ConsoleColor.Blue } });
+         logger.LogInformation(new() { { "Embedding Model:".PadRight(pad, ' '), ConsoleColor.DarkBlue }, { config[Constants.OPENAI_EMBEDDING_MODEL_NAME], ConsoleColor.Blue } });
+         logger.LogInformation(new() { { "Embedding Deployment:".PadRight(pad, ' '), ConsoleColor.DarkBlue }, { config[Constants.OPENAI_EMBEDDING_DEPLOYMENT_NAME], ConsoleColor.Blue } });
+         logger.LogInformation("-------------------------------------");
       }
 
       internal static async Task<int> ListFilesAsync(object t)
@@ -185,12 +184,12 @@ namespace DocumentQuestions.Console
 
          if (names.Count > 0)
          {
-            log.LogInformation("List of available documents:", ConsoleColor.Yellow);
+            logger.LogInformation("List of available documents:", ConsoleColor.Yellow);
          }
 
          foreach (var name in names)
          {
-            log.LogInformation(name);
+            logger.LogInformation(name);
          }
 
          return names.Count;
@@ -200,7 +199,7 @@ namespace DocumentQuestions.Console
       {
          if (file.Length == 0)
          {
-            log.LogInformation("Please enter a file name to process", ConsoleColor.Red);
+            logger.LogInformation("Please enter a file name to process", ConsoleColor.Red);
             return;
          }
 
@@ -208,7 +207,7 @@ namespace DocumentQuestions.Console
 
          if (!File.Exists(name))
          {
-            log.LogInformation($"The file {name} doesn't exist. Please enter a valid file name", ConsoleColor.Red);
+            logger.LogInformation($"The file {name} doesn't exist. Please enter a valid file name", ConsoleColor.Red);
             return;
          }
 

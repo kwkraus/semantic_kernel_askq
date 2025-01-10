@@ -1,11 +1,11 @@
 ﻿using Azure.AI.FormRecognizer.DocumentAnalysis;
 using Microsoft.Extensions.Logging;
 
-namespace DocumentQuestions.Library
+namespace DocumentQuestions.Library.Services
 {
-   public class DocumentIntelligence(
-      ILogger<DocumentIntelligence> log, 
-      SemanticUtility semanticUtility, 
+   public class DocumentIntelligenceService(
+      ILogger<DocumentIntelligenceService> log,
+      SemanticUtilityService semanticUtility,
       DocumentAnalysisClient documentAnalysisClient)
    {
       public async Task ProcessDocumentAsync(FileInfo file)
@@ -37,7 +37,7 @@ namespace DocumentQuestions.Library
 
          log.LogInformation("Document Processed and Indexed");
       }
-   
+
       private Dictionary<string, string> SplitDocumentIntoPagesAndParagraphs(AnalyzeResult result, string fileName)
       {
          var content = "";

@@ -8,27 +8,27 @@ using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
 using System.Reflection;
 using System.Text;
 
-namespace DocumentQuestions.Library
+namespace DocumentQuestions.Library.Services
 {
 #pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 #pragma warning disable SKEXP0020 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 #pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-   public class SemanticUtility
+   public class SemanticUtilityService
    {
       private Kernel? kernel;
       private ISemanticTextMemory? semanticMemory;
-      private readonly ILogger<SemanticUtility> log;
+      private readonly ILogger<SemanticUtilityService> log;
       private readonly IConfiguration config;
       private readonly bool usingVolatileMemory = false;
       private readonly Common common;
 
-      public SemanticUtility(
-         ILoggerFactory logFactory, 
-         IConfiguration config, 
+      public SemanticUtilityService(
+         ILogger<SemanticUtilityService> log,
+         IConfiguration config,
          Common common)
       {
-         log = logFactory.CreateLogger<SemanticUtility>();
+         this.log = log;
          this.config = config;
          this.common = common;
          InitMemoryAndKernel();
@@ -98,7 +98,7 @@ namespace DocumentQuestions.Library
             yield return item.ToString();
          }
       }
-        
+
       public async Task StoreMemoryAsync(string collectionName, Dictionary<string, string> docFile)
       {
          collectionName = Common.ReplaceInvalidCharacters(collectionName);
@@ -117,7 +117,7 @@ namespace DocumentQuestions.Library
             log.LogDebug($" #{++i} saved to {collectionName}.");
          }
       }
-      
+
       public async Task<IAsyncEnumerable<MemoryQueryResult>> SearchMemoryAsync(string collectionName, string query)
       {
          //If using Volatile Memory, first need to re-populate memory from Blob storage
@@ -152,7 +152,7 @@ namespace DocumentQuestions.Library
          StringBuilder sb = new();
          var mems = await SearchMemoryAsync(collectionName, query);
 
-         await foreach(var mem in mems)
+         await foreach (var mem in mems)
          {
             sb.AppendLine(mem.Metadata.Description);
          }

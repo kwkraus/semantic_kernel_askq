@@ -1,4 +1,4 @@
-using DocumentQuestions.Library;
+using DocumentQuestions.Library.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Configuration;
@@ -13,9 +13,9 @@ namespace DocumentQuestions.Function
 {
 #pragma warning disable SKEXP0003 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-   public class HttpTriggerSemanticKernelAskQuestion(ILogger<HttpTriggerSemanticKernelAskQuestion> log, IConfiguration config, Helper common, SemanticUtility semanticMemory)
+   public class HttpTriggerSemanticKernelAskQuestion(ILogger<HttpTriggerSemanticKernelAskQuestion> log, IConfiguration config, Helper common, SemanticUtilityService semanticMemory)
    {
-      private readonly SemanticUtility semanticUtility = semanticMemory;
+      private readonly SemanticUtilityService semanticUtility = semanticMemory;
       private readonly ILogger<HttpTriggerSemanticKernelAskQuestion> log = log;
       private readonly IConfiguration config = config;
       private readonly Helper common = common;

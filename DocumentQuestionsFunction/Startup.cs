@@ -1,6 +1,7 @@
 ﻿using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 using DocumentQuestions.Library;
+using DocumentQuestions.Library.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -48,7 +49,7 @@ namespace DocumentQuestions.Function
       private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
       {
          services.AddSingleton<Common>();
-         services.AddSingleton<SemanticUtility>();
+         services.AddSingleton<SemanticUtilityService>();
          services.AddSingleton<Helper>();
          services.AddSingleton(sp =>
          {

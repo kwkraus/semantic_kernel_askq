@@ -12,12 +12,13 @@ using System.IO;
 using System.Threading.Tasks;
 using DocumentQuestions.Library.Models;
 using Azure.Identity;
+using DocumentQuestions.Library.Services;
 namespace DocumentQuestions.Function
 {
    public class BlobTriggerProcessFile(
       ILoggerFactory logFactory, 
       IConfiguration config, 
-      SemanticUtility semanticMemory, 
+      SemanticUtilityService semanticMemory, 
       DocumentAnalysisClient documentAnalysisClient)
    {
       private readonly ILogger<BlobTriggerProcessFile> log = logFactory.CreateLogger<BlobTriggerProcessFile>();
