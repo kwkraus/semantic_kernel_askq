@@ -35,6 +35,7 @@ Write-Host "Azure OpenAI chat deployment name: $openAIChatDeploymentName" -Foreg
 Write-Host "Azure OpenAI embedding model: $openAIEmbeddingModel" -ForegroundColor Green
 Write-Host "Azure OpenAI embedding deployment name: $openAIEmbeddingDeploymentName" -ForegroundColor Green
 Write-Host "Azure Open AI Endpoint: $openAiEndpoint" -ForegroundColor Green
+
 if($localCodeOnly -eq $true)
 {
     Write-Host "Local code only, skipping Azure Bicep Deployment" -ForegroundColor DarkCyan
@@ -67,7 +68,6 @@ Write-Host -ForegroundColor Green "Getting AI Search account account key"
 $aiSearchKey = az search admin-key show --resource-group $resourceGroupName  --service-name $aiSearchName -o tsv --query primaryKey
 $docIntelligenceKey = az cognitiveservices account keys list --name $docIntelligenceAccountName --resource-group $resourceGroupName -o tsv --query key1
 
-
 $json = Get-Content 'infra/constants.json' | ConvertFrom-Json
 $appSettings = @{
         "$($json.OPENAI_ENDPOINT)" = $openAiEndpoint
@@ -96,8 +96,7 @@ $appSettings = @{
 Write-Host -ForegroundColor Green "Creating console app  local.settings.json"
 Push-Location -Path .\DocumentQuestionsConsole\
 $localsettingsJson = ConvertTo-Json $appSettings -Depth 100
-Set-Content -Path"'local.settings.json" -Value $localsettingsJson
-#$localsettingsJson | Out-File -FilePath "local.settings.json"
+Set-Content "local.settings.json" -Value $localsettingsJson
 Pop-Location
 
 if(!$?){ exit }
@@ -134,7 +133,7 @@ $funcSettings = @{
     }
 }
  $localsettingsJson = ConvertTo-Json $funcSettings -Depth 100
- $localsettingsJson | Out-File -FilePath "local.settings.json"
+ Set-Content "local.settings.json" -Value $localsettingsJson
  Pop-Location
  if(!$?){ exit }
 
