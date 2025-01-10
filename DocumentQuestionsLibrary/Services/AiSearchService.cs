@@ -1,10 +1,10 @@
 ﻿using Azure.Search.Documents.Indexes;
 using Microsoft.Extensions.Logging;
 
-namespace DocumentQuestions.Library
+namespace DocumentQuestions.Library.Services
 {
-   public class AiSearch(
-      ILogger<AiSearch> log,
+   public class AiSearchService(
+      ILogger<AiSearchService> log,
       SearchIndexClient client)
    {
       public async Task<List<string>> ListAvailableIndexesAsync()
@@ -18,7 +18,7 @@ namespace DocumentQuestions.Library
             }
             return names;
          }
-         catch(Exception exe)
+         catch (Exception exe)
          {
             log.LogError($"Problem retrieving AI Search Idexes:\r\n{exe.Message}");
             return [];

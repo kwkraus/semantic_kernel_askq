@@ -18,7 +18,7 @@ namespace DocumentQuestions.Console
       private static Parser rootParser;
       private static DocumentIntelligenceService documentIntelligence;
       private static string activeDocument = string.Empty;
-      private static AiSearch aiSearch;
+      private static AiSearchService aiSearch;
 
       public Worker(
          ILogger<Worker> logger,
@@ -26,7 +26,7 @@ namespace DocumentQuestions.Console
          StartArgs sArgs,
          SemanticUtilityService semanticUtil,
          DocumentIntelligenceService documentIntel,
-         AiSearch aiSrch)
+         AiSearchService aiSrch)
       {
          Worker.logger = logger;
          config = configuration;

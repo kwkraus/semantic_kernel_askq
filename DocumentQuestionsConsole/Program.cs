@@ -56,7 +56,7 @@ namespace DocumentQuestions.Console
                    string key = config[Constants.AISEARCH_KEY] ?? throw new ArgumentException($"Missing {Constants.AISEARCH_KEY} in configuration");
                    return new SearchIndexClient(new Uri(endpoint), new AzureKeyCredential(key));
                 });
-                services.AddSingleton<AiSearch>();
+                services.AddSingleton<AiSearchService>();
                 services.AddSingleton<Common>();
                 services.AddSingleton<ConsoleFormatter, CustomConsoleFormatter>();
 
